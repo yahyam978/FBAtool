@@ -175,7 +175,20 @@ def make_price_sheet(d: pd.DataFrame) -> pd.DataFrame:
 
 def to_excel_bytes(sheets: dict) -> bytes:
     buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="xlsxwriter") as writer:
+    engine = None
+    for candidate in ("xlsxwriter", "openpyxl"):
+        try:
+            __import__(candidate)
+            engine = candidate
+            break
+        except ImportError:
+            continue
+    if engine is None:
+        raise RuntimeError(
+            "لا توجد مكتبة لإنشاء ملفات Excel (xlsxwriter أو openpyxl). "
+            "تأكد من وجودها في requirements.txt وأعد تشغيل التطبيق (Reboot app)."
+        )
+    with pd.ExcelWriter(buf, engine=engine) as writer:
         for name, frame in sheets.items():
             frame.to_excel(writer, sheet_name=name[:31], index=False)
     return buf.getvalue()
